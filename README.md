@@ -14,8 +14,10 @@ tar -xvzf [filename.gz]
 
 run the Python script:
 
-python3 QRadar-ruleset.py [filename.xml]> rules.txt
+python3 QRadar-ruleset.py [filename.xml] > rules.txt
 
 
-Import the file into a spreadsheet, field delimiter is "#"
-format and print
+Import the rules.txt file into a spreadsheet, field delimiter is "#"
+format and print as needed.
+
+
