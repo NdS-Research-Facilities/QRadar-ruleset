@@ -9,12 +9,13 @@ On QRadar system run:
 
 copy the resulting file to a workstation and unpack the file:
 
-tar -xvzf [filename]
+tar -xvzf [filename.gz]
 
 
 run the Python script:
 
-python3 QRadar-ruleset.py > rules.txt
+python3 QRadar-ruleset.py [filename.xml]> rules.txt
 
 
-Import the file into a spreadsheet field delimiter is "#"
+Import the file into a spreadsheet, field delimiter is "#"
+format and print
