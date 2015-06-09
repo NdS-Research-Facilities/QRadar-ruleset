@@ -15,6 +15,7 @@ tar -xvzf [filename.gz]
 run the Python script:
 
 python3 QRadar-ruleset.py [filename.xml] > rules.txt
+
 python3 QRadar-rule2html.py [filename.xml] > rules.html
 
 
