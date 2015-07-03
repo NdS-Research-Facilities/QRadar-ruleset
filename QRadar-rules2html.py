@@ -1,6 +1,7 @@
 # python3 script
 import sys, os
 import json, time
+from xml.etree.ElementTree import ElementTree
 import xml.etree.ElementTree as ET
 import base64
 import lxml.etree as etree
@@ -85,15 +86,87 @@ table.sample tr {\
 table.sample td {\
 	padding: 10px 20px 10px 0px;\
 }\
+enabled.red { \
+        color: #bc232a;\
+	font-weight: bold;\
+      }\
+enabled.green { \
+        color: #749a56;\
+	font-weight: bold;\
+      }\
+\
+andnot.red { \
+        color: #1606ed;\
+	font-weight: bold;\
+      }\
+andnot.green { \
+        color: #749a56;\
+	font-weight: bold;\
+      }\
+\
+offense.yes { \
+        color: #bc232a;\
+	font-weight: bold;\
+      }\
+offense.no { \
+        color: #749a56;\
+	font-weight: bold;\
+      }\
+\
+BB.blue { \
+        color: #1606ed;\
+	font-weight: bold;\
+      }\
+BB.orange { \
+        color: #ed7306;\
+	font-weight: bold;\
+      }\
+\
+Org.SYSTEM { \
+        color: #749a56;\
+	font-weight: bold;\
+      }\
+Org.OVERRIDE { \
+        color: #bc232a;\
+	font-weight: bold;\
+      }\
+Org.USER { \
+        color: #ed7306;\
+	font-weight: bold;\
+      }\
+\
+Type.EVENT { \
+        color: #749ad8;\
+	font-weight: bold;\
+      }\
+Type.FLOW { \
+        color: #749ad8;\
+	font-weight: bold;\
+      }\
+Type.COMMON { \
+        color: #749a56;\
+	font-weight: bold;\
+      }\
+Type.OFFENSE { \
+        color: #ed7306;\
+	font-weight: bold;\
+      }\
+Type.ANOMALY {\
+        color: #ed7306;\
+	font-weight: light;\
+      }\
+tree.dm {\
+        color: #400000;\
+	font-size: 7px;\
+      }\
+\
 </style>\
 \
 <table class="sample">\
     <tr>\
-        <th>Rule Name</th>\
-        <th>Type</th>\
-        <th>Enabled</th>\
-        <th>Description</th>\
-        <th>Rule</th>\
+        <th width="33%">Name</th>\
+        <th  width="33%">Rule</th>\
+        <th  width="33%">Respons</th>\
     </tr>\
 \
 \
@@ -102,44 +175,102 @@ table.sample td {\
 	global testSeq
 
 	for rule in root.findall('custom_rule'):
-		prtTestArray=[]
 		fullTestArray=[]
 		htmlTestArray=[]
+		htmlRuleDef=[]
 		parser = MyHTMLParser()
+
 		ruleUUID=rule.find('uuid').text
+		ruleID=rule.find('id').text
+		fgroupGet="fgroup_link[id='"+ruleID+"']"
+		fgroupGet="fgroup_link"
+
+		ruleOrigin=rule.find('origin').text
+
+		for fgroup_link in root.findall('fgroup_link[item_id="'+ruleID+'"]'):
+			if fgroup_link is None: print('Error')
+			htmlGroupArray=[]
+			fgroup_link_fgroup_id = fgroup_link.find('fgroup_id').text
+			fgroup_id             = root.find('fgroup[id="'+fgroup_link_fgroup_id+'"]')
+			fgroup_name           = fgroup_id.find('description').text
+			fgroup_parent_id      = fgroup_id.find('parent_id')
+			fgroup_level_id=0
+			fgroup_level_id       = fgroup_id.find('level_id').text
+			level=">"
+#			print('  '+ruleID+' '+str(fgroup_name))
+#			htmlGroupArray.insert(0,level+str(fgroup_name))
+			
+			htmlGroupArray.append('<tree class="dm">'+level+str(fgroup_name)+' </tree>')
+			while not fgroup_parent_id is None:
+				fgroup_id       = root.find('fgroup[id="'+fgroup_parent_id.text+'"]') #find parent node
+				fgroup_name     = fgroup_id.find('description').text #find name
+				fgroup_level_id=0
+				fgroup_level_id = fgroup_id.find('level_id').text
+				level=level+">"
+				fgroup_parent_id=fgroup_id.find('parent_id') #check if new node has parent
+#				print('> '+ruleID+' '+str(fgroup_name))
+				if not fgroup_parent_id is None:
+					htmlGroupArray.append('<tree class="dm">'+level+str(fgroup_name)+' </tree>')
+#					htmlGroupArray.append(level+str(fgroup_name))
+#				htmlGroupArray.insert(0,'>'+str(fgroup_name))
+#		print('/'.join(htmlGroupArray))
+
 		detailedRuleData=base64.b64decode(rule.find('rule_data').text)
 		x = etree.fromstring(detailedRuleData)
 		m = etree.tostring(x, pretty_print = True)
+
 		drdroot = ET.fromstring(detailedRuleData)
-		testDefinitions=drdroot.find('testDefinitions')
+
+		ruleName=drdroot.find('name').text
+		ruleType=drdroot.get('type')
+		htmlRuleDef.append(ruleName)
+		htmlRuleDef.append('<br>')
+
+		htmlRuleDef.append('<Org class="'+ruleOrigin+'">'+ruleOrigin+' </Org>')
+		htmlRuleDef.append('<Type class="'+ruleType+'">'+ruleType+' </Type>')
+	
+		ruleIsBB=drdroot.get('buildingBlock')
+		if ruleIsBB is not None and ruleIsBB=='true':
+			htmlRuleDef.append('<BB class="blue">BuildingBlock </BB>')
+		else:
+			htmlRuleDef.append('<BB class="orange">Rule </BB>')
 
 		ruleEnabled=drdroot.get('enabled')
 		if ruleEnabled=='true':
-			htmlruleEnabled='<h4>Yes</h4>'
+			htmlruleEnabled='<enabled class="green">Enabled</enabled>'
 		else:
-			htmlruleEnabled='<h3>No</h3>'
+			htmlruleEnabled='<enabled class="red">Disabled</enabled>'
 
-		htmlout.append('<tr>')
+		htmlRuleDef.append(htmlruleEnabled)
+		htmlRuleDef.append('<br>')
+
+		htmlRuleDef.append('<br>'.join(htmlGroupArray))
+		htmlRuleDef.append('<br>')
+
+		htmlRuleDef.append(ruleUUID)
+		htmlRuleDef.append('<br>')
+
+# start of ruletest definition
+		testDefinitions=drdroot.find('testDefinitions')
 
 		negateTextA=''
+		negateTextA=' AND NOT '
 		negateTextB=''
 		testSeq=-1
 		for elTests in testDefinitions.findall('test'):
-			testSeq=testSeq+1
+			teteststSeq=testSeq+1
 			testName=elTests.get('name')
 			testUUID=elTests.get('uid')
 			testNegate=str(elTests.get('negate'))
 			ruleText=str(elTests.find('text').text)
 			htmltest=''
-			if testNegate=="true":
-				prttest=negateTextA
-				htmltest='<p><b>'+negateTextA+'</b>'
+			if testNegate=="true" and testNegate is not None:
+				htmltest='<andnot class="red">'+negateTextA+'</andnot>'
 			else:
-				prttest=negateTextB
-				htmltest='<p><b>'+negateTextB+'</b>'
+				htmltest='<andnot class="red">'+negateTextB+'</andnot>'
 
-			negateTextA='AND NOT '
-			negateTextB='AND '
+			negateTextA=' AND NOT '
+			negateTextB=' AND '
 
 			if isinstance(ruleText, str):
 				parser.close()
@@ -158,17 +289,103 @@ table.sample td {\
 						htmltest=htmltest+'<b>'
 #					else:
 #						htmltest=htmltest+'</b>'
-				prttest=prttest+str(x[2])
 				htmltest=htmltest+str(x[2])+'</b>'
 			
-			prtTestArray.append(prttest)
 			htmlTestArray.append(htmltest)
+#		actionDefinitions=['']
+#		responsDefinitions=[]
+#		actionDefs=ElementTree().getroot()
+#		responsDefs=[]
+#		stub=ElementTree().getroot()
+
+		actionDefinitions=drdroot.find('actions')
+		responsDefinitions=drdroot.find('responses')
+		responsHTML=''
+#		if actionDefinitions is not None: responsHTML=responsHTML+str(actionDefinitions.items())
+
+		forceOffense='false'
+
+		if actionDefinitions is not None:
+			for actions in actionDefinitions:
+				S1='';S2='';S3=''
+				if actions is not None:
+					if actions.get('value') is not None: S3=actions.get('value')
+					if actions.get('operation') is not None: S2=actions.get('operation')[3];S1=actions.get('operation')[0]
+					if S1=='s': S1='='
+					if S1=='i': S1='+'
+					if S1=='d': S1='-'
+					
+				responsHTML=responsHTML+str(S2+S3+S1)+'<br>'
+
+		if responsDefinitions is not None:
+			responsHTML=responsHTML+str(responsDefinitions.items())+'<br>'
+			newevent=responsDefinitions.find('newevent')
+			if newevent is not None:
+				htmlGroupArray=[]
+				fgroup_link_fgroup_id = fgroup_link.find('fgroup_id').text
+				fgroup_id             = root.find('fgroup[id="'+fgroup_link_fgroup_id+'"]')
+				fgroup_name           = fgroup_id.find('description').text
+				fgroup_parent_id      = fgroup_id.find('parent_id')
+				fgroup_level_id=0
+				fgroup_level_id       = fgroup_id.find('level_id').text
+				level=">"
+				neweventqid = str(newevent.get('qid'))
+				fgroup_id   = root.find('fgroup[qid="'+fgroup_link_fgroup_id+'"]')
+				
+
+
+				responsHTML=responsHTML+str('QID: '+str(newevent.get('qid')))+' <br>'
+
+
+				LLC=str('LLC : '+str(newevent.get('lowLevelCategory')))
+				CRS=str('CRS : '+str(newevent.get('credibility'))+str(newevent.get('relevance'))+str(newevent.get('severity')))
+				forceOffense=str(newevent.get('forceOffenseCreation'))
+				if forceOffense is not None and forceOffense=='true':
+					htmlforceOffense='<offense class="yes">Offense </enabled>'
+				else:
+					htmlforceOffense='<offense class="no">No-Offense </enabled>'
+
+
+				responsHTML=responsHTML+htmlforceOffense+'<br>'
+				responsHTML=responsHTML+LLC+'<br>'
+				responsHTML=responsHTML+CRS+'<br>'
+
+#				print(qid.get('qid'))
+#				print(qid.get('lowLevelCategory'))
+#				print(qid.get('forceOffenseCreation'))
+
+
+##			for action in responsDefinitions.iter():
+##				if action.tag is not None:
+
+#					print(action.tag)
+#					print(action.items())				
+##					responsHTML=responsHTML+str(action.items())+'X'
+
+
+#		print(actionHTML)
+#		print(responsHTML)
+
+#		actionDefs=[actionDefinitions,ET.Element('')][actionDefinitions is not None]
+#		responsDefs=[responsDefinitions,ET.Element('empty')][responsDefinitions is not None]
+#		print(responsDefs)
+#		if responsDefs is not None:
+#			for action in responsDefs.iter():
+#				print(action.items())
+		
+#		print(actionDefs)
+
 
 		#print(prtTestArray)
 		#print(fullTestArray)
-#		htmlout.append('<td>'+drdroot.find('name').text+'</td><td>'+ruleUUID+'</td><td>'+drdroot.get('type')+'</td><td>'+htmlruleEnabled+'</td><td>'+str(drdroot.find('notes').text)+'</td>')
-		htmlout.append('<td>'+drdroot.find('name').text+'</td><td>'+drdroot.get('type')+'</td><td>'+htmlruleEnabled+'</td><td>'+str(drdroot.find('notes').text)+'</td>')
+######		htmlout.append('<td>'+drdroot.find('name').text+'</td><td>'+ruleUUID+'</td><td>'+drdroot.get('type')+'</td><td>'+htmlruleEnabled+'</td><td>'+str(drdroot.find('notes').text)+'</td>')
+	
+		htmlout.append('<tr>')
+		htmlout.append('<td>'+(''.join(htmlRuleDef))+'</td>')
+#		htmlout.append('<td>'+str(ruleUUID)+'<p>isBB: '+str(ruleIsBB)+'<p>'+htmlruleEnabled+'<p>Type: '+drdroot.get('type')+'</td><td>'+drdroot.find('name').text+'</td><td>'+str(drdroot.find('notes').text)+'</td>')
 		htmlout.append('<td>'+(''.join(htmlTestArray))+'</td>')
+		htmlout.append('<td>'+(''.join(responsHTML))+'</td>')
+#		htmlout.append('<td>'+responsHTML+'</td>')		
 		htmlout.append('</tr>')
 		print()
 	print(' '.join(htmlout))
@@ -176,3 +393,4 @@ table.sample td {\
 
 if __name__ == "__main__":
     main()
+    
