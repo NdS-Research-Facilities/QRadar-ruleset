@@ -14,13 +14,13 @@ tar -xvzf [filename.gz]
 
 run the Python script:
 
-python3 QRadar-ruleset.py [filename.xml] > rules.txt
+python3 QRadar-rules2csv.py [filename.xml] > rules.csv
 OR
 python3 QRadar-rule2html.py [filename.xml] > rules.html
 
 open the resulting rules.htl file in a browser.
 OR
-Import the rules.txt file into a spreadsheet, field delimiter is "#"
+Import the rules.csv file into a spreadsheet, field delimiter is ","
 
 format and print as needed.
 
