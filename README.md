@@ -24,4 +24,5 @@ Import the rules.csv file into a spreadsheet, field delimiter is ","
 
 format and print as needed.
 
+DISCLAIMER: This code is free to use, feedback is welcome, do not call IBM with support issues or questions on this code. 
 
