@@ -35,7 +35,7 @@ def main():
 	tree = ET.parse(sys.argv[1])
 	root = tree.getroot()
 	rule = []
-	htmlout=['<style type="text/css">\
+	htmlheader=['<style type="text/css">\
 table.sample {\
 	page-break-inside: avoid;page-break-before:auto\
 	padding: 5px 20px 5px 0px;\
@@ -171,8 +171,11 @@ tree.dm {\
 \
 \
 ']
-
+	htmlout=htmlheader
+	htmlfooter=['</table></body></html>']
+	htmlout=[]
 	global testSeq
+	print(' '.join(htmlheader))
 
 	for rule in root.findall('custom_rule'):
 		fullTestArray=[]
@@ -185,11 +188,14 @@ tree.dm {\
 		fgroupGet="fgroup_link[id='"+ruleID+"']"
 		fgroupGet="fgroup_link"
 
+
 		ruleOrigin=rule.find('origin').text
 		htmlGroupArray=[]
+		'''
 		for fgroup_link in root.findall('fgroup_link[item_id="'+ruleID+'"]'):
-			if fgroup_link is None: print('Error')
 			
+			if fgroup_link is None: print('Error')
+  
 			fgroup_link_fgroup_id = fgroup_link.find('fgroup_id').text
 			fgroup_id             = root.find('fgroup[id="'+fgroup_link_fgroup_id+'"]')
 			fgroup_name           = fgroup_id.find('description').text
@@ -214,141 +220,145 @@ tree.dm {\
 #					htmlGroupArray.append(level+str(fgroup_name))
 #				htmlGroupArray.insert(0,'>'+str(fgroup_name))
 #		print('/'.join(htmlGroupArray))
+'''		
+		if True:
+			detailedRuleData=base64.b64decode(rule.find('rule_data').text)
+			x = etree.fromstring(detailedRuleData)
+			m = etree.tostring(x, pretty_print = True)
 
-		detailedRuleData=base64.b64decode(rule.find('rule_data').text)
-		x = etree.fromstring(detailedRuleData)
-		m = etree.tostring(x, pretty_print = True)
+			drdroot = ET.fromstring(detailedRuleData)
 
-		drdroot = ET.fromstring(detailedRuleData)
+			ruleName=drdroot.find('name').text
 
-		ruleName=drdroot.find('name').text
-		ruleType=drdroot.get('type')
-		htmlRuleDef.append(ruleName)
-		htmlRuleDef.append('<br>')
 
-		htmlRuleDef.append('<Org class="'+ruleOrigin+'">'+ruleOrigin+' </Org>')
-		htmlRuleDef.append('<Type class="'+ruleType+'">'+ruleType+' </Type>')
-	
-		ruleIsBB=drdroot.get('buildingBlock')
-		if ruleIsBB is not None and ruleIsBB=='true':
-			htmlRuleDef.append('<BB class="blue">BuildingBlock </BB>')
-		else:
-			htmlRuleDef.append('<BB class="orange">Rule </BB>')
+			ruleType=drdroot.get('type')
+			htmlRuleDef.append(ruleName)
+			htmlRuleDef.append('<br>')
 
-		ruleEnabled=drdroot.get('enabled')
-		if ruleEnabled=='true':
-			htmlruleEnabled='<enabled class="green">Enabled</enabled>'
-		else:
-			htmlruleEnabled='<enabled class="red">Disabled</enabled>'
-
-		htmlRuleDef.append(htmlruleEnabled)
-		htmlRuleDef.append('<br>')
-
-		htmlRuleDef.append('<br>'.join(htmlGroupArray))
-		htmlRuleDef.append('<br>')
-
-		htmlRuleDef.append(ruleUUID)
-		htmlRuleDef.append('<br>')
-
-# start of ruletest definition
-		testDefinitions=drdroot.find('testDefinitions')
-
-		negateTextA=''
-		negateTextA=' AND NOT '
-		negateTextB=''
-		testSeq=-1
-		for elTests in testDefinitions.findall('test'):
-			teteststSeq=testSeq+1
-			testName=elTests.get('name')
-			testUUID=elTests.get('uid')
-			testNegate=str(elTests.get('negate'))
-			ruleText=str(elTests.find('text').text)
-			htmltest=''
-			if testNegate=="true" and testNegate is not None:
-				htmltest='<andnot class="red">'+negateTextA+'</andnot>'
+			htmlRuleDef.append('<Org class="'+ruleOrigin+'">'+ruleOrigin+' </Org>')
+			htmlRuleDef.append('<Type class="'+ruleType+'">'+ruleType+' </Type>')
+		
+			ruleIsBB=drdroot.get('buildingBlock')
+			if ruleIsBB is not None and ruleIsBB=='true':
+				htmlRuleDef.append('<BB class="blue">BuildingBlock </BB>')
 			else:
-				htmltest='<andnot class="red">'+negateTextB+'</andnot>'
+				htmlRuleDef.append('<BB class="orange">Rule </BB>')
 
+			ruleEnabled=drdroot.get('enabled')
+			if ruleEnabled=='true':
+				htmlruleEnabled='<enabled class="green">Enabled</enabled>'
+			else:
+				htmlruleEnabled='<enabled class="red">Disabled</enabled>'
+
+			htmlRuleDef.append(htmlruleEnabled)
+			htmlRuleDef.append('<br>')
+
+			htmlRuleDef.append('<br>'.join(htmlGroupArray))
+			htmlRuleDef.append('<br>')
+
+			htmlRuleDef.append(ruleUUID)
+			htmlRuleDef.append('<br>')
+
+	# start of ruletest definition
+			testDefinitions=drdroot.find('testDefinitions')
+
+			negateTextA=''
 			negateTextA=' AND NOT '
-			negateTextB=' AND '
-
-			if isinstance(ruleText, str):
-				parser.close()
-				parser.testArray=[]
-				parse=str(parser.feed(ruleText))
-
-			oldx0=-1
-			oldx1=-1
-			for x in parser.testArray:
-				fullTestArray.append(x)
-				if str(x[0])!=oldx0: 
-					oldx0=str(x[0])
-				if str(x[1])!=oldx1: 
-					oldx1=int(x[1])
-					if oldx1==1:
-						htmltest=htmltest+'<b>'
-#					else:
-#						htmltest=htmltest+'</b>'
-				htmltest=htmltest+str(x[2])+'</b>'
-			
-			htmlTestArray.append(htmltest)
-#		actionDefinitions=['']
-#		responsDefinitions=[]
-#		actionDefs=ElementTree().getroot()
-#		responsDefs=[]
-#		stub=ElementTree().getroot()
-
-		actionDefinitions=drdroot.find('actions')
-		responsDefinitions=drdroot.find('responses')
-		responsHTML=''
-#		if actionDefinitions is not None: responsHTML=responsHTML+str(actionDefinitions.items())
-
-		forceOffense='false'
-
-		if actionDefinitions is not None:
-			for actions in actionDefinitions:
-				S1='';S2='';S3=''
-				if actions is not None:
-					if actions.get('value') is not None: S3=actions.get('value')
-					if actions.get('operation') is not None: S2=actions.get('operation')[3];S1=actions.get('operation')[0]
-					if S1=='s': S1='='
-					if S1=='i': S1='+'
-					if S1=='d': S1='-'
-					
-				responsHTML=responsHTML+str(S2+S3+S1)+'<br>'
-
-		if responsDefinitions is not None:
-			responsHTML=responsHTML+str(responsDefinitions.items())+'<br>'
-			newevent=responsDefinitions.find('newevent')
-			if newevent is not None:
-				htmlGroupArray=[]
-				fgroup_link_fgroup_id = fgroup_link.find('fgroup_id').text
-				fgroup_id             = root.find('fgroup[id="'+fgroup_link_fgroup_id+'"]')
-				fgroup_name           = fgroup_id.find('description').text
-				fgroup_parent_id      = fgroup_id.find('parent_id')
-				fgroup_level_id=0
-				fgroup_level_id       = fgroup_id.find('level_id').text
-				level=">"
-				neweventqid = str(newevent.get('qid'))
-				fgroup_id   = root.find('fgroup[qid="'+fgroup_link_fgroup_id+'"]')
-				
-
-
-				responsHTML=responsHTML+str('QID: '+str(newevent.get('qid')))+' <br>'
-
-
-				LLC=str('LLC : '+str(newevent.get('lowLevelCategory')))
-				CRS=str('CRS : '+str(newevent.get('credibility'))+str(newevent.get('relevance'))+str(newevent.get('severity')))
-				forceOffense=str(newevent.get('forceOffenseCreation'))
-				if forceOffense is not None and forceOffense=='true':
-					htmlforceOffense='<offense class="yes">Offense </enabled>'
+			negateTextB=''
+			testSeq=-1
+			for elTests in testDefinitions.findall('test'):
+				teteststSeq=testSeq+1
+				testName=elTests.get('name')
+				testUUID=elTests.get('uid')
+				testNegate=str(elTests.get('negate'))
+				ruleText=str(elTests.find('text').text)
+				htmltest=''
+				if testNegate=="true" and testNegate is not None:
+					htmltest='<andnot class="red">'+negateTextA+'</andnot>'
 				else:
-					htmlforceOffense='<offense class="no">No-Offense </enabled>'
+					htmltest='<andnot class="red">'+negateTextB+'</andnot>'
+
+				negateTextA=' AND NOT '
+				negateTextB=' AND '
+
+				if isinstance(ruleText, str):
+					parser.close()
+					parser.testArray=[]
+					parse=str(parser.feed(ruleText))
+
+				oldx0=-1
+				oldx1=-1
+				for x in parser.testArray:
+					fullTestArray.append(x)
+					if str(x[0])!=oldx0: 
+						oldx0=str(x[0])
+					if str(x[1])!=oldx1: 
+						oldx1=int(x[1])
+						if oldx1==1:
+							htmltest=htmltest+'<b>'
+	#					else:
+	#						htmltest=htmltest+'</b>'
+					htmltest=htmltest+str(x[2])+'</b>'
+				
+				htmlTestArray.append(htmltest)
+	#		actionDefinitions=['']
+	#		responsDefinitions=[]
+	#		actionDefs=ElementTree().getroot()
+	#		responsDefs=[]
+	#		stub=ElementTree().getroot()
+
+			actionDefinitions=drdroot.find('actions')
+			responsDefinitions=drdroot.find('responses')
+			responsHTML=''
+	#		if actionDefinitions is not None: responsHTML=responsHTML+str(actionDefinitions.items())
+
+			forceOffense='false'
+
+			if actionDefinitions is not None:
+				for actions in actionDefinitions:
+					S1='';S2='';S3=''
+					if actions is not None:
+						if actions.get('value') is not None: S3=actions.get('value')
+						if actions.get('operation') is not None: S2=actions.get('operation')[3];S1=actions.get('operation')[0]
+						if S1=='s': S1='='
+						if S1=='i': S1='+'
+						if S1=='d': S1='-'
+						
+					responsHTML=responsHTML+str(S2+S3+S1)+'<br>'
+
+			if responsDefinitions is not None:
+				responsHTML=responsHTML+str(responsDefinitions.items())+'<br>'
+				newevent=responsDefinitions.find('newevent')
+				if newevent is not None:
+					htmlGroupArray=[]
+					'''
+					fgroup_link_fgroup_id = fgroup_link.find('fgroup_id').text
+					fgroup_id             = root.find('fgroup[id="'+fgroup_link_fgroup_id+'"]')
+					fgroup_name           = fgroup_id.find('description').text
+					fgroup_parent_id      = fgroup_id.find('parent_id')
+					fgroup_level_id=0
+					fgroup_level_id       = fgroup_id.find('level_id').text
+					level=">"'''
+					neweventqid = str(newevent.get('qid'))
+					###fgroup_id   = root.find('fgroup[qid="'+fgroup_link_fgroup_id+'"]')
+					
 
 
-				responsHTML=responsHTML+htmlforceOffense+'<br>'
-				responsHTML=responsHTML+LLC+'<br>'
-				responsHTML=responsHTML+CRS+'<br>'
+					responsHTML=responsHTML+str('QID: '+str(newevent.get('qid')))+' <br>'
+
+
+					LLC=str('LLC : '+str(newevent.get('lowLevelCategory')))
+					CRS=str('CRS : '+str(newevent.get('credibility'))+str(newevent.get('relevance'))+str(newevent.get('severity')))
+					forceOffense=str(newevent.get('forceOffenseCreation'))
+					if forceOffense is not None and forceOffense=='true':
+						htmlforceOffense='<offense class="yes">Offense </enabled>'
+					else:
+						htmlforceOffense='<offense class="no">No-Offense </enabled>'
+
+
+					responsHTML=responsHTML+htmlforceOffense+'<br>'
+					responsHTML=responsHTML+LLC+'<br>'
+					responsHTML=responsHTML+CRS+'<br>'
 
 #				print(qid.get('qid'))
 #				print(qid.get('lowLevelCategory'))
@@ -382,13 +392,14 @@ tree.dm {\
 	
 		htmlout.append('<tr>')
 		htmlout.append('<td>'+(''.join(htmlRuleDef))+'</td>')
-#		htmlout.append('<td>'+str(ruleUUID)+'<p>isBB: '+str(ruleIsBB)+'<p>'+htmlruleEnabled+'<p>Type: '+drdroot.get('type')+'</td><td>'+drdroot.find('name').text+'</td><td>'+str(drdroot.find('notes').text)+'</td>')
+	#		htmlout.append('<td>'+str(ruleUUID)+'<p>isBB: '+str(ruleIsBB)+'<p>'+htmlruleEnabled+'<p>Type: '+drdroot.get('type')+'</td><td>'+drdroot.find('name').text+'</td><td>'+str(drdroot.find('notes').text)+'</td>')
 		htmlout.append('<td>'+(''.join(htmlTestArray))+'</td>')
 		htmlout.append('<td>'+(''.join(responsHTML))+'</td>')
-#		htmlout.append('<td>'+responsHTML+'</td>')		
+	#		htmlout.append('<td>'+responsHTML+'</td>')		
 		htmlout.append('</tr>')
 		print()
-	print(' '.join(htmlout))
+		print(' '.join(htmlout))
+	print(' '.join(htmlfooter))
 
 
 if __name__ == "__main__":
