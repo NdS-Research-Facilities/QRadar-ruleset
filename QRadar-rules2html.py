@@ -186,10 +186,10 @@ tree.dm {\
 		fgroupGet="fgroup_link"
 
 		ruleOrigin=rule.find('origin').text
-
+		htmlGroupArray=[]
 		for fgroup_link in root.findall('fgroup_link[item_id="'+ruleID+'"]'):
 			if fgroup_link is None: print('Error')
-			htmlGroupArray=[]
+			
 			fgroup_link_fgroup_id = fgroup_link.find('fgroup_id').text
 			fgroup_id             = root.find('fgroup[id="'+fgroup_link_fgroup_id+'"]')
 			fgroup_name           = fgroup_id.find('description').text
