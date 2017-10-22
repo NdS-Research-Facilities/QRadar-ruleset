@@ -399,6 +399,7 @@ tree.dm {\
 		htmlout.append('</tr>')
 		print()
 		print(' '.join(htmlout))
+		htmlout=[]
 	print(' '.join(htmlfooter))
 
 
